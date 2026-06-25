@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procesamiento Digital de Imágenes — UCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1320;
+  --surface:#101B2D;
+  --surface-2:#15233A;
+  --line: rgba(94,234,212,0.14);
+  --line-strong: rgba(94,234,212,0.28);
+  --text:#ECF1F7;
+  --muted:#8B9AB3;
+  --teal:#5EEAD4;
+  --teal-dim: rgba(94,234,212,0.12);
+  --amber:#F5A623;
+  --amber-dim: rgba(245,166,35,0.12);
+  --danger:#FF6B6B;
+  --radius: 14px;
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity:0.35;
+  pointer-events:none;
+  z-index:0;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+}
+a{color:var(--teal); text-decoration:none;}
+.wrap{max-width:1140px; margin:0 auto; padding:0 28px; position:relative; z-index:1;}
+h1,h2,h3,h4{font-family:var(--display); margin:0; letter-spacing:-0.01em;}
+.eyebrow{
+  font-family:var(--mono); font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--teal); display:flex; align-items:center; gap:8px; margin-bottom:14px;
+}
+.eyebrow::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--teal); box-shadow:0 0 8px var(--teal);}
+section{position:relative; z-index:1; padding:96px 0;}
+.section-head{max-width:640px; margin-bottom:48px;}
+.section-head h2{font-size:clamp(1.7rem,3vw,2.3rem); font-weight:600;}
+.section-head p{color:var(--muted); margin-top:12px; font-size:1.02rem;}
+
+/* NAV */
+nav{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  background:rgba(11,19,32,0.82); backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--line);
+}
+nav .inner{display:flex; align-items:center; justify-content:space-between; padding:14px 28px; max-width:1140px; margin:0 auto;}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:0.82rem; color:var(--text);}
+.brand .dot{width:9px;height:9px;border-radius:2px;background:var(--teal); box-shadow:0 0 10px var(--teal);}
+.navlinks{display:flex; gap:26px; font-size:0.86rem;}
+.navlinks a{color:var(--muted); transition:color .2s;}
+.navlinks a:hover{color:var(--teal);}
+@media (max-width:780px){.navlinks{display:none;}}
+
+/* HERO */
+.hero{padding-top:160px; padding-bottom:80px;}
+.hero-top{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+.tag{
+  font-family:var(--mono); font-size:0.72rem; padding:5px 10px; border-radius:6px;
+  border:1px solid var(--line-strong); color:var(--teal); background:var(--teal-dim);
+}
+.hero h1{
+  font-size:clamp(2.2rem, 5vw, 3.6rem); font-weight:700; line-height:1.08; max-width:880px;
+}
+.hero h1 span{color:var(--teal);}
+.hero-sub{color:var(--muted); font-size:1.1rem; max-width:640px; margin-top:20px;}
+.hero-meta{
+  display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:18px;
+  margin-top:40px; padding-top:28px; border-top:1px solid var(--line);
+}
+.hero-meta div .k{font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;}
+.hero-meta div .v{font-size:0.92rem; margin-top:4px;}
+
+/* HERO DEMO (signature element) */
+.scope{
+  margin-top:56px; border:1px solid var(--line-strong); border-radius:var(--radius);
+  background:var(--surface); overflow:hidden;
+}
+.scope-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 16px; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:0.72rem; color:var(--muted);
+}
+.scope-bar .leds{display:flex; gap:6px;}
+.scope-bar .leds span{width:7px;height:7px;border-radius:50%; background:rgba(255,255,255,0.18);}
+.scope-bar .leds span:nth-child(1){background:var(--danger);}
+.scope-bar .leds span:nth-child(2){background:var(--amber);}
+.scope-bar .leds span:nth-child(3){background:var(--teal);}
+.scope-body{position:relative; aspect-ratio:16/7; cursor:ew-resize; user-select:none; background:#000;}
+.scope-body canvas{position:absolute; top:0; left:0; width:100%; height:100%; display:block;}
+#sliderHandle{
+  position:absolute; top:0; bottom:0; width:2px; background:var(--teal); box-shadow:0 0 12px var(--teal);
+  left:50%; pointer-events:none;
+}
+#sliderHandle::after{
+  content:"⇆"; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:34px;height:34px; border-radius:50%; background:var(--teal); color:#06120f;
+  display:flex; align-items:center; justify-content:center; font-size:0.95rem;
+}
+.scope-labels{display:flex; justify-content:space-between; padding:10px 16px; font-family:var(--mono); font-size:0.68rem; color:var(--muted);}
+
+/* CARDS */
+.grid{display:grid; gap:20px;}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+@media (max-width:880px){.grid-3,.grid-2{grid-template-columns:1fr;}}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:26px; transition:border-color .2s, transform .2s;
+}
+.card:hover{border-color:var(--line-strong);}
+.card .num{font-family:var(--mono); font-size:0.72rem; color:var(--teal); margin-bottom:10px; display:block;}
+.card h3{font-size:1.08rem; font-weight:600; margin-bottom:10px;}
+.card p{color:var(--muted); font-size:0.92rem; margin:0;}
+.card.out-of-scope{border-style:dashed; opacity:0.7;}
+
+/* THEORY ACCORDION-ish */
+.theory-row{
+  display:grid; grid-template-columns: 220px 1fr; gap:30px; padding:26px 0; border-top:1px solid var(--line);
+}
+.theory-row:first-of-type{border-top:none;}
+.theory-row h4{font-size:1rem; color:var(--teal); font-family:var(--mono); font-weight:500;}
+.theory-row .content p{color:var(--muted); font-size:0.94rem; margin:0 0 10px;}
+.theory-row .content p:last-child{margin-bottom:0;}
+.cite{font-size:0.82rem; color:#6E7E97; font-style:italic;}
+@media (max-width:780px){.theory-row{grid-template-columns:1fr; gap:10px;}}
+
+/* DEMO SECTION */
+.demo-panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:28px;
+}
+.demo-controls{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:22px; align-items:center;}
+.btn{
+  font-family:var(--mono); font-size:0.78rem; padding:10px 16px; border-radius:8px;
+  border:1px solid var(--line-strong); background:transparent; color:var(--text); cursor:pointer;
+  transition: all .15s;
+}
+.btn:hover{background:var(--teal-dim); border-color:var(--teal);}
+.btn.primary{background:var(--teal); color:#06120f; border-color:var(--teal); font-weight:600;}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.active{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
+input[type=file]{display:none;}
+.slider-row{display:flex; align-items:center; gap:14px; font-family:var(--mono); font-size:0.78rem; color:var(--muted); flex:1; min-width:200px;}
+.slider-row input[type=range]{flex:1; accent-color:var(--teal);}
+.demo-canvases{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+@media (max-width:780px){.demo-canvases{grid-template-columns:1fr;}}
+.canvas-box{border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#04070c;}
+.canvas-box .label{
+  font-family:var(--mono); font-size:0.7rem; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--line);
+  display:flex; justify-content:space-between;
+}
+.canvas-box canvas{width:100%; display:block; image-rendering:pixelated;}
+.hist-row{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px;}
+@media (max-width:780px){.hist-row{grid-template-columns:1fr;}}
+.stat-strip{
+  display:flex; gap:24px; margin-top:18px; flex-wrap:wrap; font-family:var(--mono); font-size:0.8rem;
+  padding-top:18px; border-top:1px solid var(--line);
+}
+.stat-strip div .k{color:var(--muted); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em;}
+.stat-strip div .v{color:var(--teal); font-size:1rem; margin-top:2px;}
+.dropzone{
+  border:1.5px dashed var(--line-strong); border-radius:10px; padding:40px 20px; text-align:center;
+  color:var(--muted); font-size:0.88rem; cursor:pointer; transition:border-color .2s, background .2s;
+}
+.dropzone:hover, .dropzone.drag{border-color:var(--teal); background:var(--teal-dim);}
+.dropzone strong{color:var(--text);}
+
+/* STACK BADGES */
+.stack{display:flex; flex-wrap:wrap; gap:12px;}
+.stack span{
+  font-family:var(--mono); font-size:0.78rem; padding:9px 14px; border:1px solid var(--line); border-radius:8px;
+  background:var(--surface-2); color:var(--text);
+}
+
+/* TABLE */
+table{width:100%; border-collapse:collapse; font-size:0.88rem;}
+th,td{text-align:left; padding:12px 14px; border-bottom:1px solid var(--line);}
+th{font-family:var(--mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);}
+td{color:var(--text);}
+.status-ok{color:var(--teal); font-family:var(--mono); font-size:0.82rem;}
+.table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); padding:6px;}
+
+/* CONCLUSIONS LIST */
+.conclusions{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:18px;}
+.conclusions li{
+  display:flex; gap:16px; padding-bottom:18px; border-bottom:1px solid var(--line);
+}
+.conclusions li:last-child{border-bottom:none; padding-bottom:0;}
+.conclusions li .mark{font-family:var(--mono); color:var(--amber); flex-shrink:0;}
+
+/* REFERENCES */
+.refs{display:flex; flex-direction:column; gap:14px;}
+.refs .ref{font-size:0.86rem; color:var(--muted); padding-left:22px; text-indent:-22px;}
+.refs .ref b{color:var(--text); font-weight:500;}
+
+footer{
+  border-top:1px solid var(--line); padding:48px 0; text-align:center; color:var(--muted); font-size:0.82rem;
+}
+footer .fteam{margin-top:10px; font-family:var(--mono); font-size:0.76rem;}
+.scroll-fade{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease;}
+.scroll-fade.in{opacity:1; transform:none;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="brand"><span class="dot"></span> PDI&nbsp;/&nbsp;UCT&nbsp;2026</div>
+    <div class="navlinks">
+      <a href="#proyecto">Proyecto</a>
+      <a href="#teoria">Marco teórico</a>
+      <a href="#demo">Demo</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#conclusiones">Conclusiones</a>
+      <a href="#referencias">Referencias</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero wrap">
+  <div class="hero-top">
+    <span class="tag">Procesamiento Digital de Imágenes</span>
+    <span class="tag">Python · OpenCV · Streamlit</span>
+    <span class="tag">Google Colab</span>
+  </div>
+  <h1>Realce y segmentación de imágenes, <span>pixel por pixel.</span></h1>
+  <p class="hero-sub">Aplicación web que carga imágenes JPG/PNG y aplica ecualización de histograma, filtro Gaussiano, filtro de Mediana y umbralización de Otsu — con resultados comparativos en tiempo real.</p>
+
+  <div class="hero-meta">
+    <div><div class="k">Universidad</div><div class="v">Católica de Trujillo "Benedicto XVI"</div></div>
+    <div><div class="k">Facultad</div><div class="v">Ingeniería y Arquitectura</div></div>
+    <div><div class="k">Línea de investigación</div><div class="v">Sistemas de Informática</div></div>
+    <div><div class="k">Lugar y año</div><div class="v">Trujillo, Perú — 2026</div></div>
+  </div>
+
+  <!-- Signature interactive comparison scope -->
+  <div class="scope">
+    <div class="scope-bar">
+      <span>CH.01 — ecualización_histograma.raw</span>
+      <div class="leds"><span></span><span></span><span></span></div>
+    </div>
+    <div class="scope-body" id="scopeBody">
+      <canvas id="scopeAfter"></canvas>
+      <canvas id="scopeBefore"></canvas>
+      <div id="sliderHandle"></div>
+    </div>
+    <div class="scope-labels"><span>ANTES — bajo contraste</span><span>ARRASTRA PARA COMPARAR</span><span>DESPUÉS — histograma ecualizado</span></div>
+  </div>
+</header>
+
+<!-- PROYECTO -->
+<section id="proyecto" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">01 · El proyecto</div>
+    <h2>Una aplicación con alcance acotado y verificable</h2>
+    <p>Desarrollada para el curso de Procesamiento Digital de Imágenes, la aplicación permite cargar una imagen y observar, en tiempo real, el efecto de tres técnicas de realce y un método de segmentación automática.</p>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <span class="num">Módulo 1</span>
+      <h3>Carga de imagen</h3>
+      <p>Soporte para formatos JPG y PNG, con lectura mediante Pillow y conversión a matrices NumPy/OpenCV listas para procesar.</p>
+    </div>
+    <div class="card">
+      <span class="num">Módulo 2</span>
+      <h3>Realce</h3>
+      <p>Ecualización de histograma, filtro Gaussiano (σ ajustable) y filtro de Mediana (kernel ajustable), cada uno con su explicación visual inmediata.</p>
+    </div>
+    <div class="card">
+      <span class="num">Módulo 3</span>
+      <h3>Segmentación</h3>
+      <p>Umbralización automática de Otsu sobre escala de grises, sin parámetros manuales, con estadísticas de píxeles fondo/objeto.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;" class="card out-of-scope">
+    <span class="num" style="color:var(--muted);">Fuera de alcance</span>
+    <p>Operaciones morfológicas avanzadas (erosión/dilatación), compresión de imágenes y un módulo de IA asistente quedan propuestos como trabajo futuro.</p>
+  </div>
+</section>
+
+<!-- MARCO TEORICO -->
+<section id="teoria" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">02 · Marco teórico</div>
+    <h2>De la matriz de píxeles a la decisión binaria</h2>
+    <p>Cada técnica implementada responde a un principio teórico concreto del procesamiento digital de imágenes.</p>
+  </div>
+
+  <div class="theory-row">
+    <h4>Imagen digital</h4>
+    <div class="content">
+      <p>Una imagen digital se modela como una función f(x, y), donde cada par de coordenadas espaciales almacena un nivel de intensidad o color. La resolución espacial —el número de píxeles por unidad de longitud— define cuánto detalle puede representarse, a costa de memoria y tiempo de cómputo.</p>
+      <p class="cite">Gonzalez &amp; Woods (2022)</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Modelos de color</h4>
+    <div class="content">
+      <p>RGB representa cada color como combinación de tres canales primarios y es el estándar de pantallas y cámaras. La escala de grises reduce cada píxel a un único valor de intensidad (0–255) y es la base de la mayoría de algoritmos clásicos. HSV separa el matiz de la luminosidad, lo que facilita segmentar por color.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Histograma</h4>
+    <div class="content">
+      <p>El histograma describe cuántos píxeles existen en cada nivel de intensidad. Normalizado, aproxima la densidad de probabilidad de los tonos de la imagen y es el insumo directo de la ecualización y de la umbralización de Otsu.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Ecualización de histograma</h4>
+    <div class="content">
+      <p>Redistribuye los niveles de intensidad a partir de la función de distribución acumulada del histograma original, buscando una distribución más uniforme. Mejora especialmente el contraste de imágenes con rango dinámico reducido, aunque su efecto es marginal en imágenes ya bien contrastadas.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Filtro Gaussiano</h4>
+    <div class="content">
+      <p>Filtro lineal de paso bajo que convoluciona la imagen con un kernel de distribución Gaussiana, atenuando componentes de alta frecuencia. El parámetro σ controla la intensidad del suavizado: valores altos difuminan también los bordes.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Filtro de Mediana</h4>
+    <div class="content">
+      <p>Filtro no lineal que reemplaza cada píxel por la mediana de su vecindario. A diferencia del Gaussiano, elimina ruido impulsivo ("sal y pimienta") preservando los bordes, por lo que resulta superior en imágenes con ese tipo de degradación.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Segmentación: tres paradigmas</h4>
+    <div class="content">
+      <p><b style="color:var(--text)">Semántica</b> — etiqueta cada píxel por clase, sin distinguir instancias individuales. <b style="color:var(--text)">Instancia</b> — además diferencia cada objeto de la misma clase con una máscara propia (típicamente vía Mask R-CNN). <b style="color:var(--text)">Panóptica</b> — unifica ambos enfoques, clasificando el fondo y delimitando individualmente los objetos contables.</p>
+      <p>La umbralización clásica, como Otsu, equivale a la forma más elemental de segmentación semántica binaria: separa fondo y objeto sin identificar instancias.</p>
+    </div>
+  </div>
+  <div class="theory-row">
+    <h4>Umbralización de Otsu</h4>
+    <div class="content">
+      <p>Determina automáticamente el umbral T que maximiza la varianza entre clases (fondo/objeto) y minimiza la varianza intraclase, sin intervención manual. Es especialmente eficaz cuando el histograma presenta una distribución bimodal clara, como en documentos o bioimágenes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">03 · Demo interactiva</div>
+    <h2>Prueba los algoritmos con tu propia imagen</h2>
+    <p>Implementación de referencia en JavaScript de las cuatro técnicas del proyecto. Carga una imagen para procesarla directamente en el navegador.</p>
+  </div>
+
+  <div class="demo-panel">
+    <div class="dropzone" id="dropzone">
+      <strong>Haz clic para cargar</strong> o arrastra una imagen JPG/PNG aquí.<br>
+      <span style="font-size:0.78rem;">También puedes usar la imagen sintética de prueba ya cargada.</span>
+    </div>
+    <input type="file" id="fileInput" accept="image/png, image/jpeg">
+
+    <div class="demo-controls" style="margin-top:20px;">
+      <button class="btn active" data-tech="original">Original</button>
+      <button class="btn" data-tech="hist">Ecualización de histograma</button>
+      <button class="btn" data-tech="gauss">Filtro Gaussiano</button>
+      <button class="btn" data-tech="median">Filtro de Mediana</button>
+      <button class="btn" data-tech="otsu">Segmentación Otsu</button>
+    </div>
+
+    <div class="demo-controls" id="paramRow"></div>
+
+    <div class="demo-canvases">
+      <div class="canvas-box">
+        <div class="label"><span>ORIGINAL</span><span id="dimsLabel">— × —</span></div>
+        <canvas id="canvasOriginal"></canvas>
+      </div>
+      <div class="canvas-box">
+        <div class="label"><span id="resultLabel">RESULTADO</span><span id="timeLabel">0 ms</span></div>
+        <canvas id="canvasResult"></canvas>
+      </div>
+    </div>
+
+    <div class="hist-row">
+      <div class="canvas-box">
+        <div class="label"><span>HISTOGRAMA — ORIGINAL</span></div>
+        <canvas id="histOriginal" height="110"></canvas>
+      </div>
+      <div class="canvas-box">
+        <div class="label"><span id="histResultLabel">HISTOGRAMA — RESULTADO</span></div>
+        <canvas id="histResult" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="stat-strip" id="statStrip"></div>
+  </div>
+</section>
+
+<!-- ARQUITECTURA -->
+<section class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">04 · Arquitectura técnica</div>
+    <h2>Stack del proyecto original</h2>
+    <p>La aplicación de referencia se ejecuta íntegramente en Google Colab, expuesta al navegador mediante un túnel ngrok.</p>
+  </div>
+  <div class="stack">
+    <span>Python 3.x</span><span>OpenCV (cv2)</span><span>NumPy</span><span>Pillow (PIL)</span>
+    <span>Streamlit</span><span>Matplotlib</span><span>Google Colab</span><span>ngrok</span>
+  </div>
+</section>
+
+<!-- RESULTADOS -->
+<section id="resultados" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">05 · Resultados</div>
+    <h2>Casos de prueba y validación funcional</h2>
+    <p>Se evaluó la aplicación con tres tipos de imágenes: paisaje urbano (alta variedad tonal), imagen médica en escala de grises (distribución bimodal) y una imagen con ruido sal y pimienta generado artificialmente.</p>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Criterio</th><th>Observaciones</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Carga de imagen JPG/PNG</td><td>Soporta imágenes hasta 200 MB</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Ecualización de histograma</td><td>Mejora visible en imágenes de bajo contraste</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Filtro Gaussiano (σ ajustable)</td><td>Tiempo de proceso &lt; 100 ms</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Filtro de Mediana (kernel ajustable)</td><td>Elimina ruido impulsivo eficazmente</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Segmentación Otsu</td><td>Umbral calculado en &lt; 10 ms</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Histogramas comparativos</td><td>Gráfico Matplotlib integrado</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Estadísticas de segmentación</td><td>Porcentajes de fondo y objeto</td><td class="status-ok">✅ Correcto</td></tr>
+        <tr><td>Interfaz Streamlit responsiva</td><td>Accesible vía ngrok en navegador</td><td class="status-ok">✅ Correcto</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:24px;">
+    <div class="card">
+      <h3>Realce</h3>
+      <p>La ecualización destacó tejido antes imperceptible en la imagen médica. El filtro Gaussiano con σ=3 redujo el ruido gaussiano, difuminando bordes a partir de σ≥7. El filtro de Mediana (5×5) fue el más valorado: eliminó el ruido sal y pimienta sin sacrificar nitidez.</p>
+    </div>
+    <div class="card">
+      <h3>Segmentación</h3>
+      <p>En la imagen médica (bimodal), Otsu calculó T=127 con separación clara entre tejido y fondo (38% objeto / 62% fondo). En el paisaje urbano, T=143, con algunas regiones ambiguas por la complejidad tonal de la escena. Cómputo despreciable (&lt;10 ms).</p>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSIONES -->
+<section id="conclusiones" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">06 · Conclusiones</div>
+    <h2>Lo que confirma el proyecto</h2>
+  </div>
+  <ul class="conclusions">
+    <li><span class="mark">01</span><span>La aplicación cumple el alcance mínimo: realce y segmentación funcionando sobre imágenes reales en un entorno 100% gratuito (Colab + Streamlit + ngrok).</span></li>
+    <li><span class="mark">02</span><span>Las tres técnicas de realce son complementarias: ecualización para contraste global, Gaussiano para ruido gaussiano, Mediana para ruido impulsivo con preservación de bordes.</span></li>
+    <li><span class="mark">03</span><span>Otsu resulta eficaz y completamente automático en imágenes con distribuciones bimodales bien definidas, con un costo computacional despreciable.</span></li>
+    <li><span class="mark">04</span><span>OpenCV y NumPy cubrieron toda la funcionalidad necesaria, confirmando la solidez del ecosistema Python para procesamiento de imágenes.</span></li>
+    <li><span class="mark">05</span><span>Como trabajo futuro: operaciones morfológicas, compresión JPEG/PNG y un asistente de IA para recomendaciones automáticas.</span></li>
+  </ul>
+</section>
+
+<!-- REFERENCIAS -->
+<section id="referencias" class="wrap">
+  <div class="section-head">
+    <div class="eyebrow">07 · Referencias</div>
+    <h2>Bibliografía — formato APA 7.ª edición</h2>
+  </div>
+  <div class="refs">
+    <div class="ref">Chen, X., Liu, Y., &amp; Zhang, H. (2023). <b>Gaussian filtering in computer vision preprocessing: A comparative study.</b> Journal of Visual Communication and Image Representation, 91, 103754.</div>
+    <div class="ref">Gonzalez, R. C., &amp; Woods, R. E. (2022). <b>Digital image processing</b> (4.ª ed.). Pearson Education.</div>
+    <div class="ref">Lim, J., &amp; Kim, S. (2021). <b>Enhanced median filter for preserving edge information in noisy images.</b> IEEE Signal Processing Letters, 28, 1423–1427.</div>
+    <div class="ref">Osuna-Enciso, V., Cuevas, E., &amp; Sossa, H. (2021). <b>A comparison of nature inspired algorithms for multi-threshold image segmentation.</b> Expert Systems with Applications, 173, 114647.</div>
+    <div class="ref">Palma, G., Calvini, R., &amp; Amigo, J. M. (2022). <b>Data pre-processing in NIR hyperspectral imaging: A review on histogram equalization and contrast enhancement methods.</b> Chemometrics and Intelligent Laboratory Systems, 226, 104585.</div>
+    <div class="ref">Shen, L., Zhang, Z., &amp; Li, G. (2021). <b>Adaptive Otsu thresholding for image segmentation: A review and comparison with deep learning approaches.</b> Pattern Recognition Letters, 148, 56–63.</div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div>Universidad Católica de Trujillo "Benedicto XVI" — Facultad de Ingeniería y Arquitectura</div>
+  <div class="fteam">Novoa Seminario, Ricardo Antonio · Saavedra Revollar, Luis Gustavo · Cabello Castro, Brayan Lee — Docente: Vaneza Bernardet Arteaga Vega</div>
+</footer>
+
+<script>
+/* ---------------------------------------------------------
+   IMAGE PROCESSING ENGINE (vanilla JS, mirrors the OpenCV
+   pipeline described in the report: equalizeHist, GaussianBlur,
+   medianBlur, threshold + THRESH_OTSU)
+--------------------------------------------------------- */
+const MAX_DIM = 360;
+
+function toGrayscaleArr(imgData){
+  const {data,width,height} = imgData;
+  const gray = new Uint8ClampedArray(width*height);
+  for(let i=0,p=0;i<data.length;i+=4,p++){
+    gray[p] = (0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2]);
+  }
+  return gray;
+}
+
+function histogramOf(gray){
+  const h = new Array(256).fill(0);
+  for(let i=0;i<gray.length;i++) h[gray[i]]++;
+  return h;
+}
+
+function equalizeHistogram(gray,w,h){
+  const hist = histogramOf(gray);
+  const total = w*h;
+  const cdf = new Array(256);
+  let acc=0;
+  for(let i=0;i<256;i++){acc+=hist[i]; cdf[i]=acc;}
+  const cdfMin = cdf.find(v=>v>0) || 0;
+  const map = new Uint8ClampedArray(256);
+  for(let i=0;i<256;i++){
+    map[i] = Math.round(((cdf[i]-cdfMin)/(total-cdfMin || 1))*255);
+  }
+  const out = new Uint8ClampedArray(gray.length);
+  for(let i=0;i<gray.length;i++) out[i]=map[gray[i]];
+  return out;
+}
+
+function grayToImageData(gray,w,h){
+  const out = new ImageData(w,h);
+  for(let i=0,p=0;i<out.data.length;i+=4,p++){
+    out.data[i]=out.data[i+1]=out.data[i+2]=gray[p];
+    out.data[i+3]=255;
+  }
+  return out;
+}
+
+function gaussianKernel(sigma){
+  const radius = Math.max(1, Math.round(sigma*2.5));
+  const size = radius*2+1;
+  const k = new Array(size);
+  let sum=0;
+  for(let i=-radius;i<=radius;i++){
+    const v = Math.exp(-(i*i)/(2*sigma*sigma));
+    k[i+radius]=v; sum+=v;
+  }
+  for(let i=0;i<size;i++) k[i]/=sum;
+  return {k,radius};
+}
+
+function gaussianBlur(imgData, sigma){
+  const {width:w,height:h,data} = imgData;
+  const {k,radius} = gaussianKernel(sigma);
+  const tmp = new Float32Array(data.length);
+  // horizontal pass
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let r=0,g=0,b=0;
+      for(let i=-radius;i<=radius;i++){
+        const xx = Math.min(w-1,Math.max(0,x+i));
+        const idx = (y*w+xx)*4;
+        const wt = k[i+radius];
+        r+=data[idx]*wt; g+=data[idx+1]*wt; b+=data[idx+2]*wt;
+      }
+      const o=(y*w+x)*4;
+      tmp[o]=r; tmp[o+1]=g; tmp[o+2]=b; tmp[o+3]=255;
+    }
+  }
+  const out = new ImageData(w,h);
+  for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){
+      let r=0,g=0,b=0;
+      for(let i=-radius;i<=radius;i++){
+        const yy = Math.min(h-1,Math.max(0,y+i));
+        const idx = (yy*w+x)*4;
+        const wt = k[i+radius];
+        r+=tmp[idx]*wt; g+=tmp[idx+1]*wt; b+=tmp[idx+2]*wt;
+      }
+      const o=(y*w+x)*4;
+      out.data[o]=r; out.data[o+1]=g; out.data[o+2]=b; out.data[o+3]=255;
+    }
+  }
+  return out;
+}
+
+function medianBlur(imgData, ksize){
+  const {width:w,height:h,data} = imgData;
+  const r = Math.floor(ksize/2);
+  const out = new ImageData(w,h);
+  const winR=[],winG=[],winB=[];
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      winR.length=0; winG.length=0; winB.length=0;
+      for(let dy=-r;dy<=r;dy++){
+        const yy=Math.min(h-1,Math.max(0,y+dy));
+        for(let dx=-r;dx<=r;dx++){
+          const xx=Math.min(w-1,Math.max(0,x+dx));
+          const idx=(yy*w+xx)*4;
+          winR.push(data[idx]); winG.push(data[idx+1]); winB.push(data[idx+2]);
+        }
+      }
+      winR.sort((a,b)=>a-b); winG.sort((a,b)=>a-b); winB.sort((a,b)=>a-b);
+      const mid = winR.length>>1;
+      const o=(y*w+x)*4;
+      out.data[o]=winR[mid]; out.data[o+1]=winG[mid]; out.data[o+2]=winB[mid]; out.data[o+3]=255;
+    }
+  }
+  return out;
+}
+
+function otsuThreshold(gray,w,h){
+  const hist = histogramOf(gray);
+  const total = w*h;
+  let sumAll=0;
+  for(let i=0;i<256;i++) sumAll+=i*hist[i];
+  let wB=0,sumB=0,best=0,bestVar=-1;
+  for(let t=0;t<256;t++){
+    wB += hist[t];
+    if(wB===0) continue;
+    const wF = total-wB;
+    if(wF===0) break;
+    sumB += t*hist[t];
+    const mB = sumB/wB;
+    const mF = (sumAll-sumB)/wF;
+    const varBetween = wB*wF*(mB-mF)*(mB-mF);
+    if(varBetween>bestVar){bestVar=varBetween; best=t;}
+  }
+  const binary = new Uint8ClampedArray(gray.length);
+  let white=0;
+  for(let i=0;i<gray.length;i++){
+    binary[i] = gray[i] > best ? 255 : 0;
+    if(binary[i]===255) white++;
+  }
+  return {threshold:best, binary, whitePct: (white/gray.length*100), blackPct: 100-(white/gray.length*100)};
+}
+
+function drawHistogram(canvas, gray){
+  const hist = histogramOf(gray);
+  const max = Math.max(...hist);
+  const w = canvas.width = canvas.clientWidth || 300;
+  const h = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = 'rgba(94,234,212,0.6)';
+  const barW = w/256;
+  for(let i=0;i<256;i++){
+    const bh = (hist[i]/max)*(h-6);
+    ctx.fillRect(i*barW, h-bh, Math.max(1,barW), bh);
+  }
+}
+
+/* ---------------- scaling helper ---------------- */
+function loadImageToCanvas(img, canvas){
+  let w = img.width, h = img.height;
+  const scale = Math.min(1, MAX_DIM/Math.max(w,h));
+  w = Math.round(w*scale); h = Math.round(h*scale);
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img,0,0,w,h);
+  return ctx.getImageData(0,0,w,h);
+}
+
+/* ---------------- synthetic test image (no external assets) ---------------- */
+function makeSyntheticImage(canvas){
+  const w = canvas.width = 320, h = canvas.height = 220;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,w,h);
+  grad.addColorStop(0,'#3a3f55');
+  grad.addColorStop(1,'#52566b');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+  // low-contrast shapes to make equalization visible
+  ctx.fillStyle = 'rgba(80,90,110,0.9)';
+  ctx.beginPath(); ctx.arc(110,110,70,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(110,118,135,0.9)';
+  ctx.fillRect(190,40,100,150);
+  ctx.fillStyle = 'rgba(70,78,96,0.9)';
+  ctx.beginPath(); ctx.arc(230,160,40,0,Math.PI*2); ctx.fill();
+  // subtle noise
+  const id = ctx.getImageData(0,0,w,h);
+  for(let i=0;i<id.data.length;i+=4){
+    const n = (Math.random()-0.5)*18;
+    id.data[i]+=n; id.data[i+1]+=n; id.data[i+2]+=n;
+  }
+  ctx.putImageData(id,0,0);
+  return id;
+}
+
+/* ================= HERO SCOPE (signature element) ================= */
+(function(){
+  const before = document.getElementById('scopeBefore');
+  const after = document.getElementById('scopeAfter');
+  const body = document.getElementById('scopeBody');
+  const handle = document.getElementById('sliderHandle');
+
+  function render(){
+    const rect = body.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    before.width = w; before.height = h;
+    after.width = w; after.height = h;
+
+    const tmp = document.createElement('canvas');
+    const srcData = makeSyntheticImage(tmp);
+    const bctx = before.getContext('2d');
+    bctx.imageSmoothingEnabled = true;
+    bctx.drawImage(tmp,0,0,w,h);
+    const beforeImgData = bctx.getImageData(0,0,w,h);
+
+    const gray = toGrayscaleArr(beforeImgData);
+    const eq = equalizeHistogram(gray, w, h);
+    const eqRGBA = grayToImageData(eq, w, h);
+    after.getContext('2d').putImageData(eqRGBA,0,0);
+  }
+  render();
+  window.addEventListener('resize', ()=>{ render(); positionSlider(lastX); });
+
+  let lastX = 0.5;
+  function positionSlider(pct){
+    lastX = pct;
+    const rect = body.getBoundingClientRect();
+    handle.style.left = (pct*100)+'%';
+    after.style.clipPath = `inset(0 0 0 ${pct*100}%)`;
+  }
+  positionSlider(0.5);
+
+  function handleMove(clientX){
+    const rect = body.getBoundingClientRect();
+    let pct = (clientX-rect.left)/rect.width;
+    pct = Math.min(1,Math.max(0,pct));
+    positionSlider(pct);
+  }
+  let dragging=false;
+  body.addEventListener('mousedown',e=>{dragging=true; handleMove(e.clientX);});
+  window.addEventListener('mousemove',e=>{if(dragging) handleMove(e.clientX);});
+  window.addEventListener('mouseup',()=>dragging=false);
+  body.addEventListener('touchstart',e=>{dragging=true; handleMove(e.touches[0].clientX);});
+  body.addEventListener('touchmove',e=>{if(dragging) handleMove(e.touches[0].clientX);});
+  window.addEventListener('touchend',()=>dragging=false);
+})();
+
+/* ================= DEMO SECTION ================= */
+(function(){
+  const canvasOriginal = document.getElementById('canvasOriginal');
+  const canvasResult = document.getElementById('canvasResult');
+  const histOriginal = document.getElementById('histOriginal');
+  const histResult = document.getElementById('histResult');
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const paramRow = document.getElementById('paramRow');
+  const statStrip = document.getElementById('statStrip');
+  const dimsLabel = document.getElementById('dimsLabel');
+  const timeLabel = document.getElementById('timeLabel');
+  const resultLabel = document.getElementById('resultLabel');
+  const histResultLabel = document.getElementById('histResultLabel');
+  const buttons = document.querySelectorAll('.demo-controls .btn[data-tech]');
+
+  let currentImgData = null;
+  let currentTech = 'original';
+  let sigma = 3, ksize = 5;
+
+  function setParamsUI(){
+    paramRow.innerHTML = '';
+    if(currentTech==='gauss'){
+      paramRow.innerHTML = `<div class="slider-row">Sigma (σ): <input type="range" id="sigmaRange" min="1" max="10" value="${sigma}"> <span id="sigmaVal">${sigma}</span></div>`;
+      document.getElementById('sigmaRange').addEventListener('input', e=>{
+        sigma = parseInt(e.target.value);
+        document.getElementById('sigmaVal').textContent = sigma;
+        process();
+      });
+    } else if(currentTech==='median'){
+      paramRow.innerHTML = `<div class="slider-row">Kernel: <input type="range" id="kRange" min="3" max="11" step="2" value="${ksize}"> <span id="kVal">${ksize}×${ksize}</span></div>`;
+      document.getElementById('kRange').addEventListener('input', e=>{
+        ksize = parseInt(e.target.value);
+        document.getElementById('kVal').textContent = `${ksize}×${ksize}`;
+        process();
+      });
+    }
+  }
+
+  function loadFromImage(img){
+    currentImgData = loadImageToCanvas(img, canvasOriginal);
+    dimsLabel.textContent = `${canvasOriginal.width} × ${canvasOriginal.height} px`;
+    drawHistogram(histOriginal, toGrayscaleArr(currentImgData));
+    process();
+  }
+
+  function process(){
+    if(!currentImgData) return;
+    const w = currentImgData.width, h = currentImgData.height;
+    const t0 = performance.now();
+    let resultImgData, resultGray, statsHTML='';
+    resultLabel.textContent = ({
+      original:'RESULTADO — ORIGINAL', hist:'RESULTADO — ECUALIZACIÓN', gauss:'RESULTADO — FILTRO GAUSSIANO',
+      median:'RESULTADO — FILTRO DE MEDIANA', otsu:'RESULTADO — SEGMENTACIÓN OTSU'
+    })[currentTech];
+    histResultLabel.textContent = 'HISTOGRAMA — ' + (currentTech==='original'?'ORIGINAL':resultLabel.textContent.split('— ')[1]);
+
+    if(currentTech==='original'){
+      resultImgData = currentImgData;
+      resultGray = toGrayscaleArr(currentImgData);
+    } else if(currentTech==='hist'){
+      const gray = toGrayscaleArr(currentImgData);
+      resultGray = equalizeHistogram(gray, w, h);
+      resultImgData = grayToImageData(resultGray, w, h);
+      statsHTML = statBlock('Técnica','Ecualización de histograma') + statBlock('Efecto','Contraste global redistribuido');
+    } else if(currentTech==='gauss'){
+      resultImgData = gaussianBlur(currentImgData, sigma);
+      resultGray = toGrayscaleArr(resultImgData);
+      statsHTML = statBlock('σ (sigma)', sigma) + statBlock('Kernel', (2*Math.round(sigma*2.5)+1)+'×'+(2*Math.round(sigma*2.5)+1));
+    } else if(currentTech==='median'){
+      resultImgData = medianBlur(currentImgData, ksize);
+      resultGray = toGrayscaleArr(resultImgData);
+      statsHTML = statBlock('Kernel', `${ksize}×${ksize}`) + statBlock('Tipo','Filtro no lineal');
+    } else if(currentTech==='otsu'){
+      const gray = toGrayscaleArr(currentImgData);
+      const {threshold,binary,whitePct,blackPct} = otsuThreshold(gray, w, h);
+      resultImgData = grayToImageData(binary, w, h);
+      resultGray = binary;
+      statsHTML = statBlock('Umbral T', threshold) + statBlock('Objeto (blanco)', whitePct.toFixed(1)+'%') + statBlock('Fondo (negro)', blackPct.toFixed(1)+'%');
+    }
+
+    const t1 = performance.now();
+    canvasResult.width = w; canvasResult.height = h;
+    canvasResult.getContext('2d').putImageData(resultImgData,0,0);
+    drawHistogram(histResult, resultGray);
+    timeLabel.textContent = (t1-t0).toFixed(1)+' ms';
+    statStrip.innerHTML = statsHTML || statBlock('Técnica','Imagen original') ;
+  }
+
+  function statBlock(k,v){
+    return `<div><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  }
+
+  buttons.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      buttons.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      currentTech = b.dataset.tech;
+      setParamsUI();
+      process();
+    });
+  });
+
+  dropzone.addEventListener('click', ()=>fileInput.click());
+  fileInput.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const img = new Image();
+    img.onload = ()=>loadFromImage(img);
+    img.src = URL.createObjectURL(file);
+  });
+  ['dragover','dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{
+      e.preventDefault();
+      if(evt==='dragover') dropzone.classList.add('drag');
+      if(evt==='dragleave') dropzone.classList.remove('drag');
+      if(evt==='drop'){
+        dropzone.classList.remove('drag');
+        const file = e.dataTransfer.files[0];
+        if(file){
+          const img = new Image();
+          img.onload = ()=>loadFromImage(img);
+          img.src = URL.createObjectURL(file);
+        }
+      }
+    });
+  });
+
+  // default synthetic test image
+  const synthCanvas = document.createElement('canvas');
+  const synthData = makeSyntheticImage(synthCanvas);
+  const img = new Image();
+  img.onload = ()=>loadFromImage(img);
+  img.src = synthCanvas.toDataURL();
+})();
+
+/* fade-in on scroll */
+(function(){
+  const els = document.querySelectorAll('section');
+  els.forEach(el=>el.classList.add('scroll-fade'));
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+  }, {threshold:0.08});
+  els.forEach(el=>obs.observe(el));
+})();
+</script>
+</body>
+</html>
